@@ -19,6 +19,7 @@ env:
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
         # list of jobs to run:
         include:
