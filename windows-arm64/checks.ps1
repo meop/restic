@@ -62,7 +62,8 @@ function Compare-Trees([string] $expected, [string] $actual) {
 # restic restores the snapshot's absolute path under the target
 # (target\C\Users\...\data); find the restored copy of the data directory.
 function Find-Restored([string] $target) {
-    $marker = Get-ChildItem -LiteralPath $target -Recurse -File -Filter 'restic-check-marker.txt' | Select-Object -First 1
+    # -Force: the restored AppData directory keeps its hidden attribute.
+    $marker = Get-ChildItem -LiteralPath $target -Recurse -File -Force -Filter 'restic-check-marker.txt' | Select-Object -First 1
     if (-not $marker) { throw "restored data not found under $target" }
     $marker.Directory.FullName
 }

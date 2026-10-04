@@ -41,6 +41,7 @@ skip=${SKIP_TESTS:+-SkipTests}
     "pwsh -NoProfile -NonInteractive -File $remote_win\\checks.ps1 -Archive $remote_win\\src.tar.gz -Work $remote_win $skip" </dev/null
 } 2>&1 | tee "$out/summary.log"
 status=${PIPESTATUS[0]}
-scp "${scp_opts[@]}" "$host:$remote_rel/logs/*" "$out/" || echo "could not copy remote logs" >&2
+# Windows' sshd does not expand remote wildcards, so copy the directory.
+scp -r "${scp_opts[@]}" "$host:$remote_rel/logs" "$out/" || echo "could not copy remote logs" >&2
 echo "logs: $out"
 exit "$status"
