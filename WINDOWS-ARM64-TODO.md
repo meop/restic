@@ -88,5 +88,17 @@ cause, so none is an ARM64 regression:
   encryption to round-trip; EFS does not work on glass (the script records
   "EFS works"), and the same tests fail on resin.
 
-Still to do: rerun resin with the PATH fix and the EFS probe for a final
-side-by-side, then the release asset and self-update naming.
+Final side-by-side, with Git's tools on PATH and the EFS probe (both
+machines report Windows 11 Pro, "EFS works: False"):
+
+| | ARM64 (resin) | x64 (glass) |
+| --- | --- | --- |
+| Packages passing | 49 | 49 |
+| Failing | `cmd/restic` (`TestStdinFromCommand*`), `internal/fs` (`TestRestoreFileAttributes`), `internal/restorer` (6 attribute tests) | the same tests |
+| Cause | uv's `python` launcher fails to start Python; EFS unavailable | same |
+
+So the suite shows no ARM64-specific failure.
+
+Still to do: the release asset and self-update naming; then decide how to
+offer the VSS fix upstream (it changes behaviour for ARM64 users today,
+independent of a release asset).
