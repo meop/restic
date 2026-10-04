@@ -152,6 +152,9 @@ Check 'forget --keep-last 1 --prune' {
 Check 'check after prune' { Invoke-Logged 'check-2' $restic @('check') | Out-Null; 'no errors' }
 
 # The architecture-sensitive path from #3596: back up through a VSS snapshot.
+# Existing shadow copies (restore points and the like) are the machine's own;
+# only new ones left behind by restic count.
+$shadowsBefore = @(Get-CimInstance Win32_ShadowCopy -ErrorAction SilentlyContinue | ForEach-Object ID)
 Check 'backup --use-fs-snapshot' {
     $out = Invoke-Logged 'backup-vss' $restic @('backup', '--host', 'check', '--use-fs-snapshot', $data)
     $vss = $out | Select-String -SimpleMatch 'VSS', 'snapshot for' | Select-Object -First 2
@@ -163,10 +166,10 @@ Check 'restore VSS snapshot' {
     Invoke-Logged 'restore-vss' $restic @('restore', 'latest', '--target', (Join-Path $Work 'restore-vss')) | Out-Null
     Compare-Trees $data (Find-Restored (Join-Path $Work 'restore-vss'))
 }
-Check 'no VSS shadow copies left' {
-    $left = @(Get-CimInstance Win32_ShadowCopy -ErrorAction SilentlyContinue).Count
-    if ($left) { throw "$left shadow copies remain (vssadmin list shadows)" }
-    'none'
+Check 'no new VSS shadow copies left' {
+    $left = @(Get-CimInstance Win32_ShadowCopy -ErrorAction SilentlyContinue | Where-Object { $_.ID -notin $shadowsBefore })
+    if ($left) { throw "$($left.Count) new shadow copies remain: $($left.ID -join ', ')" }
+    "none new ($($shadowsBefore.Count) pre-existing)"
 }
 Check 'check after VSS backup' { Invoke-Logged 'check-3' $restic @('check', '--read-data') | Out-Null; 'no errors' }
 
