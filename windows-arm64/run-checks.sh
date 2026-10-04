@@ -42,6 +42,6 @@ skip=${SKIP_TESTS:+-SkipTests}
 } 2>&1 | tee "$out/summary.log"
 status=${PIPESTATUS[0]}
 # Windows' sshd does not expand remote wildcards, so copy the directory.
-scp -r "${scp_opts[@]}" "$host:$remote_rel/logs" "$out/" || echo "could not copy remote logs" >&2
+scp -r -o BatchMode=yes -P "$port" "$host:$remote_rel/logs" "$out/" || echo "could not copy remote logs" >&2
 echo "logs: $out"
 exit "$status"
