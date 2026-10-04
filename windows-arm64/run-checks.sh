@@ -32,6 +32,8 @@ git archive --format=tar.gz -o "$archive" HEAD
 remote_rel='AppData/Local/restic-windows-checks'
 remote_win='$env:LOCALAPPDATA\restic-windows-checks'
 skip=${SKIP_TESTS:+-SkipTests}
+# set -e would end the script at a failing run, before the logs are kept.
+status=0
 {
   echo "host=$host:$port label=$label commit=$(git rev-parse --short HEAD) ($(git log -1 --format=%s))"
   ssh "${ssh_opts[@]}" "$host" "New-Item -ItemType Directory -Force $remote_win | Out-Null" </dev/null
@@ -39,8 +41,7 @@ skip=${SKIP_TESTS:+-SkipTests}
   scp "${scp_opts[@]}" "$here/checks.ps1" "$host:$remote_rel/"
   ssh "${ssh_opts[@]}" "$host" \
     "pwsh -NoProfile -NonInteractive -File $remote_win\\checks.ps1 -Archive $remote_win\\src.tar.gz -Work $remote_win $skip" </dev/null
-} 2>&1 | tee "$out/summary.log"
-status=${PIPESTATUS[0]}
+} 2>&1 | tee "$out/summary.log" || status=$?
 # Windows' sshd does not expand remote wildcards, so copy the directory.
 scp -r -o BatchMode=yes -P "$port" "$host:$remote_rel/logs" "$out/" || echo "could not copy remote logs" >&2
 echo "logs: $out"
