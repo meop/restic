@@ -71,13 +71,25 @@ function Find-Restored([string] $target) {
 "host: $env:COMPUTERNAME $([Runtime.InteropServices.RuntimeInformation]::OSArchitecture), Windows $([Environment]::OSVersion.Version)"
 "elevated: $(([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole('Administrators'))"
 "go: $(go version)"
+"edition: $((Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion').EditionID)"
+# Several restic tests encrypt files with EFS and expect the attribute back;
+# record whether EFS works here so those results can be read correctly.
+$efsProbe = Join-Path $Work 'efs-probe.txt'
+Set-Content $efsProbe 'probe'
+cipher /e $efsProbe 2>&1 | Out-Null
+"EFS works: $(((Get-Item $efsProbe).Attributes -band [IO.FileAttributes]::Encrypted) -ne 0)"
+Remove-Item -Force $efsProbe
 
 tar -xzf $Archive -C $src
 if ($LASTEXITCODE -ne 0) { throw "tar failed: $LASTEXITCODE" }
 Push-Location $src
 try {
     if (-not $SkipTests) {
-        # The whole suite; a package failure is recorded, not fatal.
+        # The whole suite; a package failure is recorded, not fatal. Some tests
+        # run `true`, `false` and `echo`; GitHub's Windows runners provide them
+        # from Git for Windows, so do the same.
+        $gitUsrBin = Join-Path $env:ProgramFiles 'Git\usr\bin'
+        if (Test-Path $gitUsrBin) { $env:PATH = "$env:PATH;$gitUsrBin" }
         $start = Get-Date
         & go test -count=1 ./... 2>&1 | ForEach-Object { "$_" } | Set-Content -Encoding utf8 (Join-Path $logs 'go-test.log')
         $code = $LASTEXITCODE
