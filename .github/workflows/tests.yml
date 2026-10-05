@@ -28,7 +28,7 @@ jobs:
             os: windows-latest
 
           - job_name: Windows ARM64
-            go: 1.26.x
+            go: 1.27.x
             os: windows-11-arm
 
           - job_name: macOS

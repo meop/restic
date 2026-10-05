@@ -10,7 +10,7 @@ the existing Windows x64 release and record the results below.
 
 ## Required checks
 
-- [ ] Run the complete `go test ./...` suite on a native Windows ARM64 runner.
+- [x] Run the complete `go test ./...` suite on a native Windows ARM64 runner.
       Compare the result with the existing Windows x64 job. Investigate any
       ARM64-only failure; do not treat a failure in another platform's matrix
       job as an ARM64 regression.
@@ -98,6 +98,13 @@ machines report Windows 11 Pro, "EFS works: False"):
 | Cause | uv's `python` launcher fails to start Python; EFS unavailable | same |
 
 So the suite shows no ARM64-specific failure.
+
+GitHub Actions covers the environment-dependent tests: in fork run
+https://github.com/meop/restic/actions/runs/37238010216 (this branch, with
+the VSS fix, on current master) the full suite passes on both `windows-latest`
+and native `windows-11-arm`, including `cmd/restic` (the Python tests),
+`internal/fs` and `internal/restorer` (the EFS attribute tests). That run's
+only failures are Linux cloud-backend tests that need upstream's secrets.
 
 Still to do: the release asset and self-update naming; then decide how to
 offer the VSS fix upstream (it changes behaviour for ARM64 users today,
